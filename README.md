@@ -1,7 +1,7 @@
 # Bevy Gameplay Abilities
 This project was inspired by Unreal Engine's Gameplay Ability Systems (GAS).
 It depends on two other crates that I wrote: [bevy_hierarchical_tags](https://github.com/emberlightstudios/bevy_hierarchical_tags) and [bevy_gameplay_effects](https://github.com/emberlightstudios/bevy_gameplay_effects).
-It also depends on the bevy_behave crate (https://github.com/RJ/bevy_behave).
+It also depends on the [bevy_behave](https://github.com/RJ/bevy_behave) crate.
 
 The purpose of this crate is to provide an abstraction layer over the flow control of abiities for characters in games. 
 It does not write abilities for you.
