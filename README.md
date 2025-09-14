@@ -12,7 +12,7 @@ Internally there is a plugin, an AbilityRegistry resource, and structs for Abili
 Other relevant types from bevy_gameplay_effects are ActiveTags, ActiveEffects, and GameplayStats.  
 
 ## AbilityDefinition
-You define abilities with this type. It has several fields worth mentioning.
+You define abilities with this type and then register in the registry. It has several fields worth mentioning.
 ### AbilityTags
 This has several sub-fields
  - ability => Basically the name of the ability.  It is a TagId, and is also the key to this definition in the HashMap inside the AbilityRegistry.
