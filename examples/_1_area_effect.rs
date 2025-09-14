@@ -1,3 +1,8 @@
+/// This example demonstrates a simple stun area effect.
+/// Use WASD to move and space bar to execute the ability.
+/// It costs 25 mana and you start with 100, so you can do it 4 times.
+/// There is also a 5 second cooldown.
+ 
 use bevy::prelude::*;
 use bevy_abilities::prelude::*;
 use bevy_behave::prelude::*;
@@ -271,6 +276,10 @@ fn trigger_stun(
     );
 
     // Pay mana cost
+    // We defined this when we register.  All that really
+    // does is ensure we have enough to pay the cost before
+    // we can execute it.  When it is time to pay we still
+    // have to do that manually.
     commands.trigger(
         AddEffect(AddEffectData::<Stats>::new(
             player,
@@ -286,7 +295,9 @@ fn trigger_stun(
     );
 
     // Finalize
-    commands.trigger(trigger.event().ctx().success());
+    let ctx = trigger.event().ctx();
+    commands.trigger(ctx.success());
+    commands.entity(ctx.behave_entity()).despawn();
 }
 
 /*------------------------+
