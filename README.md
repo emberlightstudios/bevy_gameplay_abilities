@@ -40,7 +40,7 @@ NOTE: This is still a WIP.  I will get an example of this up as soon as possible
 
 ### Execution Tree
 This is also an Option<Tree<Behave>>.  If there is no targeting tree defined, then this will get spawned instead when an ability is executed.
-Implement your tree to add animations, sounds, particles, pay ability costs, etc.
+Implement your tree to add gameplay effects, animations, sounds, particles, pay ability costs, etc.
 
 ## Ability
 Ability is the runtime version of the AbilityDefinition.  Use Ability::from<&AbilityDefinition> to create one.  It will store some relevant state for the lifetime of the ability.
