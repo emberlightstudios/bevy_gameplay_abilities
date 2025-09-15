@@ -3,7 +3,7 @@ This project was inspired by Unreal Engine's Gameplay Ability Systems (GAS).
 It depends on two other crates that I wrote: [bevy_hierarchical_tags](https://github.com/emberlightstudios/bevy_hierarchical_tags) and [bevy_gameplay_effects](https://github.com/emberlightstudios/bevy_gameplay_effects).
 It also depends on the [bevy_behave](https://github.com/RJ/bevy_behave) crate.
 
-The purpose of this crate is to provide an abstraction layer over the flow control of abiities for characters in games. 
+The purpose of this crate is to provide an abstraction layer over the control flow of abiities for characters in games. 
 It does not write abilities for you.
 It allows you to define rules that control ability execution in a data-driven way so you can avoid having to write complex state machines or keeping track of a ton of marker structs.
 Instead it relies on the tag system which is more robust.
@@ -40,7 +40,7 @@ NOTE: This is still a WIP.  I will get an example of this up as soon as possible
 
 ### Execution Tree
 This is also an Option<Tree<Behave>>.  If there is no targeting tree defined, then this will get spawned instead when an ability is executed.
-Implement your tree to add animations, sounds, particles, pay ability costs, etc.
+Implement your tree to add gameplay effects, animations, sounds, particles, pay ability costs, etc.
 
 ## Ability
 Ability is the runtime version of the AbilityDefinition.  Use Ability::from<&AbilityDefinition> to create one.  It will store some relevant state for the lifetime of the ability.
