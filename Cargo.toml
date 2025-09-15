@@ -7,7 +7,6 @@ edition = "2024"
 bevy = { workspace = true }
 bevy_behave = { workspace = true }
 bevy_gameplay_effects = { workspace = true }
-dyn-clone = "1.0.20"
 bevy_hierarchical_tags = { workspace = true }
 smallvec = { workspace = true }
 

@@ -1,5 +1,3 @@
-use std::default;
-
 use bevy::prelude::*;
 use bevy_hierarchical_tags::prelude::*;
 use bevy_gameplay_effects::prelude::*;
