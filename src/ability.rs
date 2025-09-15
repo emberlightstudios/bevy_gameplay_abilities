@@ -63,12 +63,6 @@ impl<T: StatTrait> GrantedAbilities<T> {
         Self(vec)
     }
 
-    pub fn add_from_tag(&self, tag: TagId) -> Option<AbilityDefinition<T>> {
-        if let Some(index) = self.iter().position(|x| x.tags.ability == tag) {
-            Some(self[index].clone())
-        } else { None }
-    }
-
     pub fn get_from_tag(&self, tag: TagId) -> Option<AbilityDefinition<T>> {
         if let Some(index) = self.iter().position(|x| x.tags.ability == tag) {
             Some(self[index].clone())
@@ -141,6 +135,36 @@ pub(crate) fn check_ability_constraints<T: StatTrait, const N: usize>(
         }
     }
 }
+
+pub(crate) fn end_targeting<T: StatTrait>(
+    trigger: Trigger<EndTargeting<T>>,
+    mut commands: Commands,
+) {
+    let EndTargeting{ entity, ability } = trigger.event();
+    let mut ability = ability.clone();
+    if let Some(tree) = &ability.execution_tree {
+        let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
+        ability.tree_entity = Some(commands.entity(*entity).add_child(tree).id());
+    }
+    commands.trigger(ExecuteAbility{ entity: *entity, ability: ability });
+}
+
+pub(crate) fn end_ability<T: StatTrait>(
+    trigger: Trigger<EndAbility<T>>,
+    mut commands: Commands,
+    mut current: Query<(&mut CurrentAbility<T>, &mut ActiveTags)>,
+) {
+    let EndAbility{ entity, ability } = trigger.event();
+    if let Ok((mut current_ability, mut tags)) = current.get_mut(*entity) {
+        for tag in ability.tags.add.iter() {
+            tags.remove(*tag);
+        }
+        current_ability.0 = None;
+        if let Some(tree) = &ability.tree_entity {
+            commands.entity(*tree).despawn();
+        }
+    }
+}
         
 pub(crate) fn execute_ability<T: StatTrait>(
     trigger: Trigger<ExecuteAbility<T>>,
@@ -161,21 +185,8 @@ pub(crate) fn check_ability_canceled<T: StatTrait, const N: usize>(
     q.iter().for_each(|(entity, tags, current)| {
         if let Some(ability) = &current.0 {
             if ability.tags.canceled_by.any_match_from(tags, &registry) {
-                commands.trigger(CancelAbility{ entity, ability: ability.tags.ability });
+                commands.trigger(EndAbility{ entity, ability: ability.clone() });
             }
         }
     })
-}
-
-pub(crate) fn remove_current<T: StatTrait>(
-    trigger: Trigger<CancelAbility>,
-    mut q: Query<&mut CurrentAbility<T>>,
-) {
-    let CancelAbility{ entity, ability } = trigger.event();
-    if let Ok(mut current_ability) = q.get_mut(*entity) {
-        let set_none = current_ability.0.is_some() && current_ability.0.as_ref().unwrap().tags.ability == *ability;
-        if set_none {
-            current_ability.0 = None;
-        }
-    }
 }

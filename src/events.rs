@@ -17,13 +17,25 @@ pub struct ExecuteAbility<T: StatTrait> {
 }
 
 #[derive(Event)]
-pub struct BeginTargeting<T: StatTrait> {
+pub struct EndAbility<T: StatTrait> {
     pub entity: Entity,
     pub ability: Ability<T>,
 }
-        
+
 #[derive(Event)]
 pub struct CancelAbility {
     pub entity: Entity,
     pub ability: TagId,
+}
+
+#[derive(Event)]
+pub struct BeginTargeting<T: StatTrait> {
+    pub entity: Entity,
+    pub ability: Ability<T>,
+}
+
+#[derive(Event)]
+pub struct EndTargeting<T: StatTrait> {
+    pub entity: Entity,
+    pub ability: Ability<T>,
 }

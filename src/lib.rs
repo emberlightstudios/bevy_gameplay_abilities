@@ -42,7 +42,8 @@ impl<T: StatTrait, const N: usize> Plugin for AbilitiesPlugin<T, N> {
         app.insert_resource(self.tags.clone());
         app.add_observer(ability::check_ability_constraints::<T, N>);
         app.add_observer(ability::execute_ability::<T>);
-        app.add_observer(ability::remove_current::<T>);
+        app.add_observer(ability::end_targeting::<T>);
+        app.add_observer(ability::end_ability::<T>);
         app.add_systems(Update, (
             ability::check_ability_canceled::<T, N>,
         ));
