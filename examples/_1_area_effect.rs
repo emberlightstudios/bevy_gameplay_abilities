@@ -74,7 +74,7 @@ fn main() {
     /*-----------------------+
      | Register stun ability |
      +-----------------------*/
-    let mut abilities = AbilitiesPlugin::<Stats, NTAGS>::new(tag_registry);
+    let mut abilities = AbilitiesPlugin::<Stats, NTAGS>::new();
     abilities.register(stun_abililty);
 
     /*-------------+
@@ -235,7 +235,7 @@ fn pre_stun_cue(
  +---------------------------------------*/
 fn trigger_stun(
     trigger: Trigger<BehaveTrigger<StunTrigger>>,
-    mut player: Query<(Entity, &mut ActiveTags, &Transform), With<Player>>,
+    mut player: Query<(Entity, &mut ActiveTags, &Transform, &CurrentAbility<Stats>), With<Player>>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     tags: Res<StunTags>,
     mut commands: Commands,
@@ -243,7 +243,12 @@ fn trigger_stun(
     // Handle effects when abiity actually executes
     
     // Unblock player movement
-    let (player, mut player_tags, player_transform) = player.single_mut().unwrap();
+    let (
+        player,
+        mut player_tags,
+        player_transform,
+        current
+    ) = player.single_mut().unwrap();
     player_tags.remove(tags.character_movement_blocked_casting);
 
     // Stun enemies in range
@@ -297,7 +302,9 @@ fn trigger_stun(
     // Finalize
     let ctx = trigger.event().ctx();
     commands.trigger(ctx.success());
-    commands.entity(ctx.behave_entity()).despawn();
+
+    let ability = current.as_ref().unwrap().clone();
+    commands.trigger(EndAbility{ entity: player, ability });
 }
 
 /*------------------------+

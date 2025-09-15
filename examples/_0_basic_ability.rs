@@ -33,8 +33,7 @@ fn main() {
         // If character is already dying, don't let the ability trigger
         .blocked_by([dying_state]);
 
-    // AbilitiesPlugin consumes the TagRegistry resource and inserts it into the app.
-    let mut abilities: AbilitiesPlugin<Stats, MAXTAGS> = AbilitiesPlugin::new(tags);
+    let mut abilities: AbilitiesPlugin<Stats, MAXTAGS> = AbilitiesPlugin::<Stats, MAXTAGS>::new();
     abilities.register(death_ability);
 
     app
