@@ -19,7 +19,7 @@ This has several sub-fields
  - required => Derefs to TagList.  It is a list of tags which **must** be present in order for the ability to execute.
  - blocked_by => Derefs to TagList.  It is a list of tags which **must not** be present in order for the ability to execute.
  - canceled_by => Derefs to TagList.  ActiveTags is polled every Update.  If any tags from this list show up there, ability execution will end.
- - add => Derefs to TagList.  A list of tags that will be added to Activetags when ability execution begins.
+ - add => Derefs to TagList.  A list of tags that will be added to Activetags when ability execution begins. These will be removed when you trigger EndAbility
 
 ### Costs
 There are 2 types of costs, stat costs and item costs.
