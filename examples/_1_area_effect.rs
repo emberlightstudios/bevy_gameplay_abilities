@@ -51,6 +51,7 @@ fn main() {
         ability_stun, ability_stun_cooldown, character_movement_blocked_stunned,
         character_movement_blocked, character_movement_blocked_casting
     };
+    app.insert_resource(tag_registry);
     app.insert_resource(tags);
 
     /*--------------------+

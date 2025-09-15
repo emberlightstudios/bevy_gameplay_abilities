@@ -123,13 +123,15 @@ pub(crate) fn check_ability_constraints<T: StatTrait, const N: usize>(
         if let Some(tree) = &ability.targeting_tree {
             let mut ability = ability.clone();
             let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
-            ability.tree_entity = Some(commands.entity(*entity).add_child(tree).id());
+            commands.entity(*entity).add_child(tree);
+            ability.tree_entity = Some(tree);
             commands.trigger(BeginTargeting{ entity: *entity, ability })
         } else {
             let mut ability = ability.clone();
             if let Some(tree) = &ability.execution_tree {
                 let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
-                ability.tree_entity = Some(commands.entity(*entity).add_child(tree).id());
+                commands.entity(*entity).add_child(tree);
+                ability.tree_entity = Some(tree);
             }
             commands.trigger(ExecuteAbility{ entity: *entity, ability: ability });
         }
@@ -142,9 +144,13 @@ pub(crate) fn end_targeting<T: StatTrait>(
 ) {
     let EndTargeting{ entity, ability } = trigger.event();
     let mut ability = ability.clone();
+    if let Some(tree) = &ability.tree_entity {
+        commands.entity(*tree).despawn();
+    }
     if let Some(tree) = &ability.execution_tree {
         let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
-        ability.tree_entity = Some(commands.entity(*entity).add_child(tree).id());
+        commands.entity(*entity).add_child(tree);
+        ability.tree_entity = Some(tree);
     }
     commands.trigger(ExecuteAbility{ entity: *entity, ability: ability });
 }

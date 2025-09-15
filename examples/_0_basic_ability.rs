@@ -24,6 +24,7 @@ fn main() {
     let mut tags = MyTagRegistry::new();
     let death = tags.register("Ability.Death");
     let dying_state = tags.register("Character.State.Dying");
+    app.insert_resource(tags);
 
     let tag_container = MyAbilityTags { death };
 
