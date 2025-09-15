@@ -44,7 +44,7 @@ impl<T: StatTrait> CurrentAbility<T> {
     pub fn new() -> Self { Self::default() }
 }
 
-/// This component stores a list of tags representing available abilities for an entity
+/// This component stores a list of ability definitions the entity is allowed to execute
 #[derive(Component, Clone, Deref, DerefMut)]
 pub struct GrantedAbilities<T: StatTrait>(SmallVec<[AbilityDefinition<T>; 16]>);
 
