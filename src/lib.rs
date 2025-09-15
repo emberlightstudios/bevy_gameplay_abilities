@@ -22,13 +22,12 @@ pub mod prelude {
 }
 
 pub struct AbilitiesPlugin<T: StatTrait, const N: usize> {
-    tags: TagRegistry<N>,
     abilities: AbilityRegistry<T>,
 }
 
 impl<T: StatTrait, const N: usize> AbilitiesPlugin<T, N> {
-    pub fn new(tag_registry: TagRegistry<N>) -> Self {
-        Self { tags: tag_registry, abilities: AbilityRegistry::<T>::new() }
+    pub fn new() -> Self {
+        Self { abilities: AbilityRegistry::<T>::new() }
     }
 
     pub fn register(&mut self, ability: AbilityDefinition<T>) {
@@ -39,7 +38,6 @@ impl<T: StatTrait, const N: usize> AbilitiesPlugin<T, N> {
 impl<T: StatTrait, const N: usize> Plugin for AbilitiesPlugin<T, N> {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.abilities.clone());
-        app.insert_resource(self.tags.clone());
         app.add_observer(ability::check_ability_constraints::<T, N>);
         app.add_observer(ability::execute_ability::<T>);
         app.add_observer(ability::end_targeting::<T>);
