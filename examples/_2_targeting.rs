@@ -209,9 +209,9 @@ fn move_enemies_towards_targets(
     }
 }
 
-/*--------------------------------+
- | Ability Step 1 (animation cue) |
- +--------------------------------*/
+/*---------------------------+
+ | Ability Step 1 (targetng) |
+ +---------------------------*/
 fn targeting_reticle(
     mut targeter: Query<(&mut Transform, &BehaveCtx), With<WaitForTargetConfirmation>>,
     player: Query<&Transform, (With<Player>, Without<WaitForTargetConfirmation>)>,
@@ -271,7 +271,9 @@ fn parabola(start: Vec3, end: Vec3, max_height: f32, t: f32) -> Vec3 {
     let control = Vec3::new(mid.x, max_height, mid.z);
     (1.0 - t) * (1.0 - t) * start + 2.0 * (1.0 - t) * t * control + t * t * end
 }
-
+/*---------------------------------+
+ | Ability Step 2 (launch grenade) |
+ +---------------------------------*/
 fn grenade_in_flight(
     mut player: Query<(&Transform, &mut AbilityItems), With<Player>>,
     target: Query<&GrenadeTarget>,
@@ -314,9 +316,9 @@ fn grenade_in_flight(
     }
 }
 
-/*-----------------------------------+
- | Explode the grenade, kill enemies |
- +-----------------------------------*/
+/*-------------------------------+
+ | Ability step 3 (kill enemies) |
+ +-------------------------------*/
 fn explode(
     trigger: Trigger<BehaveTrigger<Explode>>,
     grenade: Query<&GrenadeTarget>,
