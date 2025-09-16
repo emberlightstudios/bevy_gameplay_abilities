@@ -9,7 +9,6 @@ use bevy_behave::prelude::*;
 pub struct AbilityDefinition<T: StatTrait> {
     pub tags: AbilityTags,
     pub execution_tree: Option<Tree<Behave>>,
-    pub targeting_tree: Option<Tree<Behave>>,
     pub costs: AbilityCost<T>,
 }
 
@@ -22,13 +21,7 @@ impl<T: StatTrait> AbilityDefinition<T> {
                 item_costs: SmallVec::new()
             },
             execution_tree: None,
-            targeting_tree: None,
         }
-    }
-
-    pub fn with_targeting_tree(mut self, tree: Tree<Behave>) -> Self {
-        self.targeting_tree = Some(tree);
-        self
     }
 
     pub fn with_execution_tree(mut self, tree: Tree<Behave>) -> Self {

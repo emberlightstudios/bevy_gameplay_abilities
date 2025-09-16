@@ -2,7 +2,7 @@ use bevy::prelude::*;
 use bevy_hierarchical_tags::prelude::*;
 use bevy_gameplay_effects::prelude::*;
 use smallvec::SmallVec;
-use crate::{costs::{AbilityCost, Inventory}, prelude::*};
+use crate::{costs::{AbilityCost, AbilityItems}, prelude::*};
 use bevy_behave::prelude::*;
 
 
@@ -10,7 +10,6 @@ use bevy_behave::prelude::*;
 pub struct Ability<T: StatTrait> {
     pub tags: AbilityTags,
     pub execution_tree: Option<Tree<Behave>>,
-    pub targeting_tree: Option<Tree<Behave>>,
     pub costs: AbilityCost<T>,
     tree_entity: Option<Entity>,
     //pub level: u8,
@@ -18,12 +17,11 @@ pub struct Ability<T: StatTrait> {
 
 impl<T: StatTrait> From<&AbilityDefinition<T>> for Ability<T> {
     fn from(value: &AbilityDefinition<T>) -> Self {
-        let AbilityDefinition::<T> { tags, execution_tree, targeting_tree,  costs } = value;
+        let AbilityDefinition::<T> { tags, execution_tree,  costs } = value;
         Self {
             tags: tags.clone(),
             costs: costs.clone(),
             execution_tree: execution_tree.clone(),
-            targeting_tree: targeting_tree.clone(),
             tree_entity: None,
         }
     }
@@ -85,7 +83,7 @@ pub(crate) fn check_ability_constraints<T: StatTrait, const N: usize>(
     tag_registry: Res<TagRegistry<N>>,
     stats: Query<&GameplayStats<T>>,
     active_tags: Query<(&ActiveTags, &GrantedAbilities<T>)>,
-    items: Query<&Inventory>,
+    items: Query<&AbilityItems>,
     mut commands: Commands,
 ) {
     let TryExecuteAbility{ entity, ability } = trigger.event();
@@ -118,40 +116,16 @@ pub(crate) fn check_ability_constraints<T: StatTrait, const N: usize>(
     }
 
     if can_pay {
-        if let Some(tree) = &ability.targeting_tree {
-            let mut ability = ability.clone();
+        let mut ability = ability.clone();
+        if let Some(tree) = &ability.execution_tree {
             let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
             commands.entity(*entity).add_child(tree);
             ability.tree_entity = Some(tree);
-            commands.trigger(BeginTargeting{ entity: *entity, ability })
-        } else {
-            let mut ability = ability.clone();
-            if let Some(tree) = &ability.execution_tree {
-                let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
-                commands.entity(*entity).add_child(tree);
-                ability.tree_entity = Some(tree);
-            }
-            commands.trigger(ExecuteAbility{ entity: *entity, ability: ability });
         }
+        commands.trigger(ExecuteAbility{ entity: *entity, ability: ability });
     }
 }
 
-pub(crate) fn end_targeting<T: StatTrait>(
-    trigger: Trigger<EndTargeting<T>>,
-    mut commands: Commands,
-) {
-    let EndTargeting{ entity, ability } = trigger.event();
-    let mut ability = ability.clone();
-    if let Some(tree) = &ability.tree_entity {
-        commands.entity(*tree).despawn();
-    }
-    if let Some(tree) = &ability.execution_tree {
-        let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
-        commands.entity(*entity).add_child(tree);
-        ability.tree_entity = Some(tree);
-    }
-    commands.trigger(ExecuteAbility{ entity: *entity, ability: ability });
-}
 
 pub(crate) fn end_ability<T: StatTrait>(
     trigger: Trigger<EndAbility<T>>,

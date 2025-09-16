@@ -16,7 +16,7 @@ pub mod prelude {
         ability_definition::AbilityDefinition,
         ability::{Ability, GrantedAbilities, CurrentAbility},
         tags::{AbilityTags},
-        costs::{ItemCost, StatCost, Inventory},
+        costs::{ItemCost, StatCost, AbilityItems},
         events::*,
     };
 }
@@ -40,7 +40,6 @@ impl<T: StatTrait, const N: usize> Plugin for AbilitiesPlugin<T, N> {
         app.insert_resource(self.abilities.clone());
         app.add_observer(ability::check_ability_constraints::<T, N>);
         app.add_observer(ability::execute_ability::<T>);
-        app.add_observer(ability::end_targeting::<T>);
         app.add_observer(ability::end_ability::<T>);
         app.add_systems(Update, (
             ability::check_ability_canceled::<T, N>,

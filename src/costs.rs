@@ -20,5 +20,9 @@ pub struct AbilityCost<T: StatTrait> {
     pub item_costs: SmallVec<[ItemCost; 1]>,
 }
 
-#[derive(Component, Deref)]
-pub struct Inventory(HashMap<u16, u16>);
+#[derive(Component, Deref, DerefMut, Default)]
+pub struct AbilityItems(HashMap<u16, u16>);
+
+impl AbilityItems {
+    pub fn new() -> Self { Self::default() }
+}

@@ -28,14 +28,3 @@ pub struct CancelAbility {
     pub ability: TagId,
 }
 
-#[derive(Event)]
-pub struct BeginTargeting<T: StatTrait> {
-    pub entity: Entity,
-    pub ability: Ability<T>,
-}
-
-#[derive(Event)]
-pub struct EndTargeting<T: StatTrait> {
-    pub entity: Entity,
-    pub ability: Ability<T>,
-}
