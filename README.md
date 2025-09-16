@@ -31,16 +31,9 @@ For implementing item costs there is a small Inventory component where you can s
 Note that this crate does not intend to provide a robust character inventory system.
 I only need to keep track of items that are relevant for ability execution, e.g. ammo or grenades.
 
-### Targeting Tree
-This is an Option<Tree<Behave>>.  Some abilities require targeting behavior, e.g. throwing a grenade.
-If this field is_some() then when the ability executes, an instance of the tree will be added as a child to the executing entity.
-Implement your targeting systems and logic in that tree.
-When targeting is complete, trigger the execution phase.
-NOTE: This is still a WIP.  I will get an example of this up as soon as possible.
-
 ### Execution Tree
-This is also an Option<Tree<Behave>>.  If there is no targeting tree defined, then this will get spawned instead when an ability is executed.
-Implement your tree to add gameplay effects, animations, sounds, particles, pay ability costs, etc.
+This is an Option<Tree<Behave>>.  If is_some() then this will get spawned as a child when an ability is executed.
+Implement your tree to add gameplay effects, animations, sounds, particles, pay ability costs, do targeting systems, etc.
 
 ## Ability
 Ability is the runtime version of the AbilityDefinition.  Use Ability::from<&AbilityDefinition> to create one.  It will store some relevant state for the lifetime of the ability.
