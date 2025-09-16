@@ -1,4 +1,7 @@
 /// This example demonstrates a simple stun area effect.
+/// It also shows how you can use tags to implement mechaincs
+/// like blocking character movement or ability cooldowns.
+/// 
 /// Use WASD to move and space bar to execute the ability.
 /// It costs 25 mana and you start with 100, so you can do it 4 times.
 /// There is also a 5 second cooldown.
@@ -197,15 +200,14 @@ fn move_enemies_towards_targets(
     time: Res<Time>,
 ) {
     for (active_tags, target, mut transform) in q.iter_mut() {
-        // Don't move if stunned
+        // Don't move if blocked
         if active_tags.any_match(tags.character_movement_blocked, &tag_registry) {
             continue
         }
 
         let Some(target) = **target else { continue };
         let d = target - transform.translation;
-        let d = d.normalize();
-        transform.translation += time.delta_secs() * MOVE_SPEED * d;
+        transform.translation += time.delta_secs() * MOVE_SPEED * d.normalize();
     }
 }
 
@@ -226,6 +228,7 @@ fn pre_stun_cue(
 
         if cue.finished() {
             player.translation.y = 0.;
+            // Move on to next behavior tree node.
             commands.trigger(ctx.success());
         }
     }
@@ -324,10 +327,8 @@ fn enemy_stun_shake(
     // Add new shake components
     for ev in added.read() {
         let EffectMetadata {target_entity, tag, source_entity} = ev.0;
-        if let Some(tag) = tag {
-            if tag == tags.character_movement_blocked_stunned {
-                commands.entity(target_entity).insert(EnemyStunShake);
-            }
+        if Some(tags.character_movement_blocked_stunned) == tag {
+            commands.entity(target_entity).insert(EnemyStunShake);
         }
     }
 
@@ -340,12 +341,10 @@ fn enemy_stun_shake(
     // Remove expired shake components
     for ev in removed.read() {
         let EffectMetadata {target_entity, tag, source_entity} = ev.0;
-        if let Some(tag) = tag {
-            if tag == tags.character_movement_blocked_stunned {
-                commands.entity(target_entity).remove::<EnemyStunShake>();
-                let mut transform = shakers.get_mut(target_entity).unwrap();
-                transform.rotation = Quat::IDENTITY;
-            }
+        if Some(tags.character_movement_blocked_stunned) == tag {
+            commands.entity(target_entity).remove::<EnemyStunShake>();
+            let mut transform = shakers.get_mut(target_entity).unwrap();
+            transform.rotation = Quat::IDENTITY;
         }
     }
 
