@@ -30,11 +30,11 @@ struct WaitForImpact;
 #[derive(Component)]
 struct GrenadeTarget(Vec3);
 
+#[derive(Component)]
+struct TargetingReticle;
+
 #[derive(Clone)]
 struct Explode;
-
-#[derive(Component)]
-struct EnemyStunShake;
 
 #[derive(Resource)]
 struct Tags {
@@ -59,20 +59,11 @@ fn main() {
      | Build ability |
      +---------------*/
      app.add_plugins(DefaultPlugins);
-    // Probably wouldn't do this here, but for the exammple it's ok.
-    let mut meshes = app.world_mut().resource_mut::<Assets<Mesh>>();
-    let grenade_mesh = Mesh3d(meshes.add(Sphere::new(0.2).mesh()));
-
-    let mut materials = app.world_mut().resource_mut::<Assets<StandardMaterial>>();
-    let grenade_material = MeshMaterial3d(materials.add(StandardMaterial {
-        base_color: Color::LinearRgba(LinearRgba { red: 1., green: 0.3, blue: 0.9, alpha: 1. }),
-        ..default()
-    }));
 
     let grenade_tree = tree!{
         Behave::Sequence => {
-            Behave::spawn((WaitForTargetConfirmation, Transform::default())),
-            Behave::spawn((WaitForImpact, Transform::default(), grenade_mesh, grenade_material)),
+            Behave::spawn(WaitForTargetConfirmation),
+            Behave::spawn(WaitForImpact),
             // Trigger the effect on enemies
             Behave::trigger(Explode)
         }
@@ -123,7 +114,7 @@ fn setup_player(
 ) {
     let mut inventory = AbilityItems::new();
     // Use u16 keys to identify items
-    inventory.insert(1, 2);
+    inventory.insert(1, 10);
 
     commands.spawn((
         Mesh3d(meshes.add(Capsule3d::default().mesh())),
@@ -132,6 +123,7 @@ fn setup_player(
             ..default()
         })),
         Transform::default(),
+        GlobalTransform::default(),
         Player,
         ActiveTags::new(),
         ActiveEffects::<Stats>::new(None),
@@ -212,32 +204,52 @@ fn move_enemies_towards_targets(
  | Ability Step 1 (targetng) |
  +---------------------------*/
 fn targeting_reticle(
-    mut targeter: Query<(&mut Transform, &BehaveCtx), With<WaitForTargetConfirmation>>,
-    player: Query<&Transform, (With<Player>, Without<WaitForTargetConfirmation>)>,
+    mut targeter: Query<&BehaveCtx, With<WaitForTargetConfirmation>>,
+    mut reticle: Query<(Entity, &mut Transform), With<TargetingReticle>>,
     time: Res<Time>,
     input: Res<ButtonInput<KeyCode>>,
     mut commands: Commands,
     mut initialized: Local<bool>,
+    mut meshes: ResMut<Assets<Mesh>>,
+    mut materials: ResMut<Assets<StandardMaterial>>,
     mut gizmos: Gizmos,
+    player: Query<&Transform, (With<Player>, Without<TargetingReticle>)>,
 ) {
-    // Simple bounce cue for 1 second before casting
-    let player = player.single().unwrap();
-
-    if let Ok((mut transform, ctx)) = targeter.single_mut() {
+    if let Ok(ctx) = targeter.single_mut() {
         if !*initialized {
             *initialized = true;
-            transform.translation = player.translation - player.rotation * Vec3::Z;
+            commands.spawn((Transform::default(), TargetingReticle));
         }
 
+        // Did we trigger the throw?
         if input.just_pressed(KeyCode::Space) {
-            // Pass the state to the tree entity so the next node can access it
-            commands.entity(ctx.behave_entity()).insert(GrenadeTarget(transform.translation));
-            // Reset local system state for next grenade
             *initialized = false;
-            // Move on to next behavior tree node.
+            // Move to next b tree node
+
+            // Spawn grenade object, set target
+            if let Ok((reticle, transform)) = reticle.single() {
+                let grenade_mesh = Mesh3d(meshes.add(Sphere::new(0.2).mesh()));
+                let grenade_material = MeshMaterial3d(materials.add(StandardMaterial {
+                    base_color: Color::LinearRgba(LinearRgba { red: 1., green: 0.3, blue: 0.9, alpha: 1. }),
+                    ..default()
+                }));
+                let player = player.single().unwrap();
+                commands.spawn((
+                    GrenadeTarget(transform.translation),
+                    Transform::from_translation(player.translation),
+                    grenade_mesh, grenade_material,
+                ));
+
+                // Despawn reticle
+                commands.entity(reticle).despawn();
+            }
+
             commands.trigger(ctx.success());
         }
+    }
 
+    // Handle reticle input
+    if let Ok((_, mut transform)) = reticle.single_mut() {
         let mut vel = Vec3::ZERO;
         if input.pressed(KeyCode::KeyA) {
             vel += Vec3::X;
@@ -274,17 +286,15 @@ fn parabola(start: Vec3, end: Vec3, max_height: f32, t: f32) -> Vec3 {
  | Ability Step 2 (launch grenade) |
  +---------------------------------*/
 fn grenade_in_flight(
+    mut ctx: Query<&BehaveCtx, With<WaitForImpact>>,
     mut player: Query<(&Transform, &mut AbilityItems), With<Player>>,
-    target: Query<&GrenadeTarget>,
-    mut grenade: Query<(&mut Transform, &BehaveCtx, &Mesh3d), (With<WaitForImpact>, Without<Player>)>,
+    mut grenade: Query<(&mut Transform, &GrenadeTarget), Without<Player>>,
     mut commands: Commands,
     time: Res<Time>,
     mut initialized: Local<bool>,
     mut timer: Local<Timer>,
-    mut gizmos: Gizmos,
 ) {
-    if let Ok((mut transform, ctx, mesh)) = grenade.single_mut() {
-        let Ok(target) = target.get(ctx.behave_entity()) else { return };
+    if let Ok(ctx) = ctx.single_mut() {
         let (player, mut items) = player.single_mut ().unwrap();
         if !*initialized {
             *initialized = true;
@@ -296,22 +306,17 @@ fn grenade_in_flight(
             *grenades = grenades.saturating_sub(1);
 
             timer.set_duration(Duration::from_secs(2));
-            transform.translation = player.translation;
         }
         timer.tick(time.delta());
-        transform.translation = parabola(player.translation, target.0, 3., timer.fraction());
 
         if timer.finished() {
             *initialized = false;
             timer.reset();
             commands.trigger(ctx.success());
         }
-        let mut isometry = Isometry3d::from_translation(transform.translation);
-        isometry.rotation = Quat::from_rotation_x(90_f32.to_radians());
-        gizmos.circle(
-            isometry,
-            4., Color::linear_rgb(1., 0., 1.)
-        );
+        if let Ok((mut transform, target)) = grenade.single_mut() {
+            transform.translation = parabola(player.translation, target.0, 3., timer.fraction());
+        }
     }
 }
 
@@ -320,18 +325,19 @@ fn grenade_in_flight(
  +-------------------------------*/
 fn explode(
     trigger: Trigger<BehaveTrigger<Explode>>,
-    grenade: Query<&GrenadeTarget>,
+    grenade: Query<(Entity, &GrenadeTarget)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     player: Query<(Entity, &CurrentAbility<Stats>), With<Player>>,
     mut commands: Commands,
 ) {
     let ctx = trigger.event().ctx();
-    let Ok(grenade) = grenade.get(ctx.behave_entity()) else { return };
+    let (entity, target) = grenade.single().unwrap();
+    commands.entity(entity).despawn();
 
     // Stun enemies in range
     let range = 4.;
     for (enemy, xform) in enemies.iter() {
-        let d = (xform.translation - grenade.0).length();
+        let d = (xform.translation - target.0).length();
         if d <= range {
             commands.entity(enemy).despawn();
         }
