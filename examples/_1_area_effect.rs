@@ -15,7 +15,6 @@ use bevy_hierarchical_tags::prelude::*;
 mod shared;
 use shared::{SharedPlugin, MoveTarget, Player, Stats, Enemy};
 
-const NTAGS: usize = 128;
 const MOVE_SPEED: f32 = 2.;
 
 
@@ -43,7 +42,7 @@ fn main() {
     /*------------------------------------------+
      | Set up the tags needed for this example  |
      +------------------------------------------*/
-    let mut tag_registry = TagRegistry::<NTAGS>::new();
+    let mut tag_registry = TagRegistry::new();
     let character_movement_blocked = tag_registry.register("Character.Movement.Blocked");
     let character_movement_blocked_stunned = tag_registry.register("Character.Movement.Blocked.Stunned");
     let character_movement_blocked_casting = tag_registry.register("Character.Movement.Blocked.Casting");
@@ -78,7 +77,7 @@ fn main() {
     /*-----------------------+
      | Register stun ability |
      +-----------------------*/
-    let mut abilities = AbilitiesPlugin::<Stats, NTAGS>::new();
+    let mut abilities = AbilitiesPlugin::<Stats>::new();
     abilities.register(stun_abililty);
 
     /*-------------+
@@ -146,7 +145,7 @@ fn player_movement(
     mut q: Query<(&mut Transform, &ActiveTags), With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
-    tag_registry: Res<TagRegistry<NTAGS>>,
+    tag_registry: Res<TagRegistry>,
     tags: Res<StunTags>,
 ) {
     let (mut player, active_tags) = q.single_mut().unwrap();
@@ -196,7 +195,7 @@ fn execute_stun_ability(
 fn move_enemies_towards_targets(
     mut q: Query<(&ActiveTags, &MoveTarget, &mut Transform)>,
     tags: Res<StunTags>,
-    tag_registry: Res<TagRegistry<NTAGS>>,
+    tag_registry: Res<TagRegistry>,
     time: Res<Time>,
 ) {
     for (active_tags, target, mut transform) in q.iter_mut() {

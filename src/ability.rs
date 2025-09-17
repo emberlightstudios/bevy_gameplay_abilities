@@ -66,9 +66,9 @@ impl<T: StatTrait> GrantedAbilities<T> {
     }
 }
 
-pub(crate) fn ability_tags_ok<const N: usize>(
+pub(crate) fn ability_tags_ok(
     tags: &AbilityTags,
-    tag_registry: &TagRegistry<N>,
+    tag_registry: &TagRegistry,
     active_tags: &ActiveTags,
 ) -> bool {
     // Must have tags
@@ -78,9 +78,9 @@ pub(crate) fn ability_tags_ok<const N: usize>(
     active_tags.none_match_from(&tags.canceled_by, tag_registry) 
 }
 
-pub(crate) fn check_ability_constraints<T: StatTrait, const N: usize>(
+pub(crate) fn check_ability_constraints<T: StatTrait>(
     trigger: Trigger<TryExecuteAbility<T>>,
-    tag_registry: Res<TagRegistry<N>>,
+    tag_registry: Res<TagRegistry>,
     stats: Query<&GameplayStats<T>>,
     active_tags: Query<(&ActiveTags, &GrantedAbilities<T>)>,
     items: Query<&AbilityItems>,
@@ -155,9 +155,9 @@ pub(crate) fn execute_ability<T: StatTrait>(
     }
 }
 
-pub(crate) fn check_ability_canceled<T: StatTrait, const N: usize>(
+pub(crate) fn check_ability_canceled<T: StatTrait>(
     q: Query<(Entity, &ActiveTags, &CurrentAbility<T>)>,
-    registry: Res<TagRegistry<N>>,
+    registry: Res<TagRegistry>,
    mut commands: Commands,
 ) {
     q.iter().for_each(|(entity, tags, current)| {

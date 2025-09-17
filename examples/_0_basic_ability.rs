@@ -13,15 +13,13 @@ use bevy_gameplay_effects::prelude::*;
 // I still have to create a dummy enum to use the abilities plugin. 
 stats!(Stats {});
 
-const MAXTAGS: usize = 256;
-type MyTagRegistry = TagRegistry<MAXTAGS>;
 type MyAbilityRegistry = AbilityRegistry<Stats>;
 
 
 fn main() {
     let mut app = App::new();
 
-    let mut tags = MyTagRegistry::new();
+    let mut tags = TagRegistry::new();
     let death = tags.register("Ability.Death");
     let dying_state = tags.register("Character.State.Dying");
     app.insert_resource(tags);
@@ -34,7 +32,7 @@ fn main() {
         // If character is already dying, don't let the ability trigger
         .blocked_by([dying_state]);
 
-    let mut abilities: AbilitiesPlugin<Stats, MAXTAGS> = AbilitiesPlugin::<Stats, MAXTAGS>::new();
+    let mut abilities: AbilitiesPlugin<Stats> = AbilitiesPlugin::<Stats>::new();
     abilities.register(death_ability);
 
     app

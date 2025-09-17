@@ -1,14 +1,14 @@
 # Bevy Gameplay Abilities
 This project was inspired by Unreal Engine's Gameplay Ability Systems (GAS).
-It depends on two other crates that I wrote: [bevy_hierarchical_tags](https://github.com/emberlightstudios/bevy_hierarchical_tags) and [bevy_gameplay_effects](https://github.com/emberlightstudios/bevy_gameplay_effects).
-It also depends on the [bevy_behave](https://github.com/RJ/bevy_behave) crate.
-
 The purpose of this crate is to provide an abstraction layer over the control flow of abiities for characters in games. 
 It does not write abilities for you.
 It allows you to define rules that control ability execution in a data-driven way so you can avoid having to write complex state machines or keeping track of a ton of marker structs.
 Instead it relies on the tag system which is more robust.
 
-Internally there is a plugin, an AbilityRegistry resource, and structs for Ability and AbilityDefinition.  Since this crate is tightly coupled to the other crates, it is generic over the same parameters that many types in those crates are.
+It depends on two other crates that I wrote: [bevy_hierarchical_tags](https://github.com/emberlightstudios/bevy_hierarchical_tags) and [bevy_gameplay_effects](https://github.com/emberlightstudios/bevy_gameplay_effects).
+It also depends on the [bevy_behave](https://github.com/RJ/bevy_behave) crate.
+
+Internally there is a plugin, an AbilityRegistry resource, and structs for Ability and AbilityDefinition.
 Other relevant types from bevy_gameplay_effects are ActiveTags, ActiveEffects, and GameplayStats.  
 
 ## AbilityDefinition

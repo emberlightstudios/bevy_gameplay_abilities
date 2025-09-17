@@ -21,11 +21,11 @@ pub mod prelude {
     };
 }
 
-pub struct AbilitiesPlugin<T: StatTrait, const N: usize> {
+pub struct AbilitiesPlugin<T: StatTrait> {
     abilities: AbilityRegistry<T>,
 }
 
-impl<T: StatTrait, const N: usize> AbilitiesPlugin<T, N> {
+impl<T: StatTrait> AbilitiesPlugin<T> {
     pub fn new() -> Self {
         Self { abilities: AbilityRegistry::<T>::new() }
     }
@@ -35,14 +35,14 @@ impl<T: StatTrait, const N: usize> AbilitiesPlugin<T, N> {
     }
 }
 
-impl<T: StatTrait, const N: usize> Plugin for AbilitiesPlugin<T, N> {
+impl<T: StatTrait> Plugin for AbilitiesPlugin<T> {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.abilities.clone());
-        app.add_observer(ability::check_ability_constraints::<T, N>);
+        app.add_observer(ability::check_ability_constraints::<T>);
         app.add_observer(ability::execute_ability::<T>);
         app.add_observer(ability::end_ability::<T>);
         app.add_systems(Update, (
-            ability::check_ability_canceled::<T, N>,
+            ability::check_ability_canceled::<T>,
         ));
     }
 }

@@ -9,7 +9,7 @@ use std::time::Duration;
 /// Use the same keys for targeting.
 /// You will have 10 grenades
  
-use bevy::{gizmos, prelude::*};
+use bevy::prelude::*;
 use bevy_abilities::prelude::*;
 use bevy_behave::prelude::*;
 use bevy_gameplay_effects::prelude::*;
@@ -18,7 +18,6 @@ use bevy_hierarchical_tags::prelude::*;
 mod shared;
 use shared::{SharedPlugin, MoveTarget, Player, Stats, Enemy};
 
-const NTAGS: usize = 128;
 const MOVE_SPEED: f32 = 2.;
 
 
@@ -49,7 +48,7 @@ fn main() {
      | Tags |
      +------*/
     // We won't use many tags in this example, but the ability needs one
-    let mut tag_registry = TagRegistry::<NTAGS>::new();
+    let mut tag_registry = TagRegistry::new();
     let grenade_ability = tag_registry.register("Ability.Grenade");
     let throwing = tag_registry.register("Ability.Grenade.Throwing");
     let tags = Tags { grenade_ability, throwing };
@@ -88,7 +87,7 @@ fn main() {
     /*--------------------------+
      | Register grenade ability |
      +--------------------------*/
-    let mut abilities = AbilitiesPlugin::<Stats, NTAGS>::new();
+    let mut abilities = AbilitiesPlugin::<Stats>::new();
     abilities.register(grenade_ability);
 
     /*-------------+
@@ -151,7 +150,7 @@ fn player_movement(
     mut q: Query<(&mut Transform, &ActiveTags), With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
     time: Res<Time>,
-    tag_registry: Res<TagRegistry<NTAGS>>,
+    tag_registry: Res<TagRegistry>,
     tags: Res<Tags>,
 ) {
     let (mut player, active_tags) = q.single_mut().unwrap();
