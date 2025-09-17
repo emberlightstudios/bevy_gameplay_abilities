@@ -227,7 +227,7 @@ fn targeting_reticle(
             // Move to next b tree node
 
             // Spawn grenade object, set target
-            if let Ok((reticle, transform)) = reticle.single() {
+            if let Ok((reticle, reticle_transform)) = reticle.single() {
                 let grenade_mesh = Mesh3d(meshes.add(Sphere::new(0.2).mesh()));
                 let grenade_material = MeshMaterial3d(materials.add(StandardMaterial {
                     base_color: Color::LinearRgba(LinearRgba { red: 1., green: 0.3, blue: 0.9, alpha: 1. }),
@@ -235,7 +235,7 @@ fn targeting_reticle(
                 }));
                 let player = player.single().unwrap();
                 commands.spawn((
-                    GrenadeTarget(transform.translation),
+                    GrenadeTarget(reticle_transform.translation),
                     Transform::from_translation(player.translation),
                     grenade_mesh, grenade_material,
                 ));
@@ -331,8 +331,8 @@ fn explode(
     mut commands: Commands,
 ) {
     let ctx = trigger.event().ctx();
-    let (entity, target) = grenade.single().unwrap();
-    commands.entity(entity).despawn();
+    let (grenade_entity, target) = grenade.single().unwrap();
+    commands.entity(grenade_entity).despawn();
 
     // Stun enemies in range
     let range = 4.;
