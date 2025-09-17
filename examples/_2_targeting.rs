@@ -1,9 +1,5 @@
 use std::time::Duration;
 
-// There is a bug in this example.  The grenade mesh does not move.  
-// I added a gizmo which tracks the transform on the same entity and 
-// it does move.  Not sure why the mesh doesn't. 
-
 /// This example demonstrates an ability with targeting and item costs.
 /// Use WASD to move and space bar to execute the ability.
 /// Use the same keys for targeting.
