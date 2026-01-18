@@ -79,7 +79,7 @@ pub(crate) fn ability_tags_ok(
 }
 
 pub(crate) fn check_ability_constraints<T: StatTrait>(
-    trigger: Trigger<TryExecuteAbility<T>>,
+    trigger: On<TryExecuteAbility<T>>,
     tag_registry: Res<TagRegistry>,
     stats: Query<&GameplayStats<T>>,
     active_tags: Query<(&ActiveTags, &GrantedAbilities<T>)>,
@@ -128,7 +128,7 @@ pub(crate) fn check_ability_constraints<T: StatTrait>(
 
 
 pub(crate) fn end_ability<T: StatTrait>(
-    trigger: Trigger<EndAbility<T>>,
+    trigger: On<EndAbility<T>>,
     mut commands: Commands,
     mut current: Query<(&mut CurrentAbility<T>, &mut ActiveTags)>,
 ) {
@@ -145,7 +145,7 @@ pub(crate) fn end_ability<T: StatTrait>(
 }
         
 pub(crate) fn execute_ability<T: StatTrait>(
-    trigger: Trigger<ExecuteAbility<T>>,
+    trigger: On<ExecuteAbility<T>>,
     mut q: Query<(&mut ActiveTags, &mut CurrentAbility<T>)>,
 ) {
     let ExecuteAbility { entity, ability } = trigger.event();

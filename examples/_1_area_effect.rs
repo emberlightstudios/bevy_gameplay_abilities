@@ -131,7 +131,7 @@ fn setup_player(
             |s| {
                 match s {
                     Stats::Mana => 100.,
-                    Stats::None => 0.
+                    Stats::None => unreachable!()
                 }
             },
         ),
