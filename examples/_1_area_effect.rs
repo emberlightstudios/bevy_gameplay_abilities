@@ -59,7 +59,7 @@ fn main() {
     /*--------------------+
      | Build stun ability |
      +--------------------*/
-    let stun_tree = tree!{
+    let stun_tree = behave!{
         Behave::Sequence => {
             // Do a little animation cue
             Behave::spawn(PreStunCue(Timer::from_seconds(1., TimerMode::Once))),

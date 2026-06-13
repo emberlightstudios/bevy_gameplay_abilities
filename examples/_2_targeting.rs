@@ -56,7 +56,7 @@ fn main() {
      +---------------*/
      app.add_plugins(DefaultPlugins);
 
-    let grenade_tree = tree!{
+    let grenade_tree = behave!{
         Behave::Sequence => {
             Behave::spawn(WaitForTargetConfirmation),
             Behave::spawn(WaitForImpact),
