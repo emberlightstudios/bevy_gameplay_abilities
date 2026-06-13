@@ -217,6 +217,34 @@ fn targeting_reticle(
             commands.spawn((Transform::default(), TargetingReticle));
         }
 
+        // Handle reticle input
+        if let Ok((_, mut transform)) = reticle.single_mut() {
+            let mut vel = Vec3::ZERO;
+            if input.pressed(KeyCode::KeyA) {
+                vel += Vec3::X;
+            }
+            if input.pressed(KeyCode::KeyD) {
+                vel -= Vec3::X;
+            }
+            if input.pressed(KeyCode::KeyW) {
+                vel += Vec3::Z;
+            }
+            if input.pressed(KeyCode::KeyS) {
+                vel -= Vec3::Z;
+            }
+            if vel != Vec3::ZERO {
+                vel = vel.normalize();
+            }
+            transform.translation += 2. * vel * MOVE_SPEED * time.delta_secs();
+
+            let mut isometry = Isometry3d::from_translation(transform.translation);
+            isometry.rotation = Quat::from_rotation_x(90_f32.to_radians());
+            gizmos.circle(
+                isometry,
+                4., Color::linear_rgb(1., 0., 1.)
+            );
+        }
+
         // Did we trigger the throw?
         if input.just_pressed(KeyCode::Space) {
             *initialized = false;
@@ -242,34 +270,6 @@ fn targeting_reticle(
 
             commands.trigger(ctx.success());
         }
-    }
-
-    // Handle reticle input
-    if let Ok((_, mut transform)) = reticle.single_mut() {
-        let mut vel = Vec3::ZERO;
-        if input.pressed(KeyCode::KeyA) {
-            vel += Vec3::X;
-        }
-        if input.pressed(KeyCode::KeyD) {
-            vel -= Vec3::X;
-        }
-        if input.pressed(KeyCode::KeyW) {
-            vel += Vec3::Z;
-        }
-        if input.pressed(KeyCode::KeyS) {
-            vel -= Vec3::Z;
-        }
-        if vel != Vec3::ZERO {
-            vel = vel.normalize();
-        }
-        transform.translation += 2. * vel * MOVE_SPEED * time.delta_secs();
-
-        let mut isometry = Isometry3d::from_translation(transform.translation);
-        isometry.rotation = Quat::from_rotation_x(90_f32.to_radians());
-        gizmos.circle(
-            isometry,
-            4., Color::linear_rgb(1., 0., 1.)
-        );
     }
 }
 
@@ -305,13 +305,14 @@ fn grenade_in_flight(
         }
         timer.tick(time.delta());
 
-        if timer.finished() {
+        if let Ok((mut transform, target)) = grenade.single_mut() {
+            transform.translation = parabola(player.translation, target.0, 3., timer.fraction());
+        }
+
+        if timer.is_finished() {
             *initialized = false;
             timer.reset();
             commands.trigger(ctx.success());
-        }
-        if let Ok((mut transform, target)) = grenade.single_mut() {
-            transform.translation = parabola(player.translation, target.0, 3., timer.fraction());
         }
     }
 }
@@ -320,7 +321,7 @@ fn grenade_in_flight(
  | Ability step 3 (kill enemies) |
  +-------------------------------*/
 fn explode(
-    trigger: Trigger<BehaveTrigger<Explode>>,
+    trigger: On<BehaveTrigger<Explode>>,
     grenade: Query<(Entity, &GrenadeTarget)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     player: Query<(Entity, &CurrentAbility<Stats>), With<Player>>,

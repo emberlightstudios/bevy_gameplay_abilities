@@ -225,7 +225,7 @@ fn pre_stun_cue(
         cue.tick(time.delta());
         player.translation.y = (cue.fraction() * 10.).sin().abs();
 
-        if cue.finished() {
+        if cue.is_finished() {
             player.translation.y = 0.;
             // Move on to next behavior tree node.
             commands.trigger(ctx.success());
@@ -237,7 +237,7 @@ fn pre_stun_cue(
  | Trigger the stun effect within radius |
  +---------------------------------------*/
 fn trigger_stun(
-    trigger: Trigger<BehaveTrigger<StunTrigger>>,
+    trigger: On<BehaveTrigger<StunTrigger>>,
     mut player: Query<(Entity, &mut ActiveTags, &Transform, &CurrentAbility<Stats>), With<Player>>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     tags: Res<StunTags>,
@@ -314,8 +314,8 @@ fn trigger_stun(
  | Enemy effect animation |
  +------------------------*/
 fn enemy_stun_shake(
-    mut added: EventReader<OnEffectAdded>,
-    mut removed: EventReader<OnEffectRemoved>,
+    mut added: MessageReader<OnEffectAdded>,
+    mut removed: MessageReader<OnEffectRemoved>,
     mut shakers: Query<&mut Transform, With<EnemyStunShake>>,
     time: Res<Time>,
     tags: Res<StunTags>,
@@ -325,7 +325,7 @@ fn enemy_stun_shake(
 
     // Add new shake components
     for ev in added.read() {
-        let EffectMetadata {target_entity, tag, source_entity} = ev.0;
+        let EffectMetadata {target_entity, tag, .. } = ev.0;
         if Some(tags.character_movement_blocked_stunned) == tag {
             commands.entity(target_entity).insert(EnemyStunShake);
         }
@@ -339,7 +339,7 @@ fn enemy_stun_shake(
 
     // Remove expired shake components
     for ev in removed.read() {
-        let EffectMetadata {target_entity, tag, source_entity} = ev.0;
+        let EffectMetadata {target_entity, tag, .. } = ev.0;
         if Some(tags.character_movement_blocked_stunned) == tag {
             commands.entity(target_entity).remove::<EnemyStunShake>();
             let mut transform = shakers.get_mut(target_entity).unwrap();

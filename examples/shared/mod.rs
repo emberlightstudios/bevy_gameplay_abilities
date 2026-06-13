@@ -1,29 +1,22 @@
 use bevy::prelude::*;
-use bevy_abilities::prelude::GrantedAbilities;
 use bevy_behave::prelude::*;
 use bevy_gameplay_effects::prelude::*;
 use rand::prelude::*;
 use rand::Rng;
-
 
 pub struct SharedPlugin;
 
 impl Plugin for SharedPlugin {
     fn build(&self, app: &mut App) {
         app.add_systems(Startup, setup_env);
-        app.add_systems(Update, (
-            check_destination_reached,
-        ));
+        app.add_systems(Update, (check_destination_reached,));
         app.add_observer(set_random_destination);
     }
 }
 
 const AREASIZE: f32 = 10.;
 
-stats!(Stats {
-    Mana
-});
-
+stats!(Stats { Mana });
 
 #[derive(Component)]
 pub struct Enemy;
@@ -40,16 +33,20 @@ pub struct MoveUntilDestinationReached;
 #[derive(Clone)]
 pub struct FindRandomMoveTarget;
 
-
 pub fn setup_env(
     mut commands: Commands,
     mut meshes: ResMut<Assets<Mesh>>,
     mut materials: ResMut<Assets<StandardMaterial>>,
 ) {
     commands.spawn((
-        Mesh3d(meshes.add(Plane3d::default().mesh().size(22., 22.,))),
+        Mesh3d(meshes.add(Plane3d::default().mesh().size(22., 22.))),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::LinearRgba(LinearRgba { red: 0.3, green: 0.6, blue: 0.3, alpha: 1. }),
+            base_color: Color::LinearRgba(LinearRgba {
+                red: 0.3,
+                green: 0.6,
+                blue: 0.3,
+                alpha: 1.,
+            }),
             ..default()
         })),
         Transform::default(),
@@ -85,25 +82,30 @@ pub fn setup_env(
     let capsule = meshes.add(Capsule3d::new(0.2, 1.0).mesh());
     for x in -10..10 {
         for y in -10..10 {
-            commands.spawn((
-                Mesh3d(capsule.clone()),
-                MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color: Color::LinearRgba(LinearRgba { red: 0.6, green: 0.6, blue: 0.6, alpha: 1. }),
-                    ..default()
-                })),
-                Transform::default().with_translation(Vec3::new(x as f32, 0., y as f32)),
-                Enemy,
-                ActiveTags::new(),
-                ActiveEffects::<Stats>::new(None),
-            ))
-            .with_child(BehaveTree::new(tree.clone()));
+            commands
+                .spawn((
+                    Mesh3d(capsule.clone()),
+                    MeshMaterial3d(materials.add(StandardMaterial {
+                        base_color: Color::LinearRgba(LinearRgba {
+                            red: 0.6,
+                            green: 0.6,
+                            blue: 0.6,
+                            alpha: 1.,
+                        }),
+                        ..default()
+                    })),
+                    Transform::default().with_translation(Vec3::new(x as f32, 0., y as f32)),
+                    Enemy,
+                    ActiveTags::new(),
+                    ActiveEffects::<Stats>::new(None),
+                ))
+                .with_child(BehaveTree::new(tree.clone()));
         }
     }
-
 }
 
 fn set_random_destination(
-    trigger: Trigger<BehaveTrigger<FindRandomMoveTarget>>,
+    trigger: On<BehaveTrigger<FindRandomMoveTarget>>,
     mut commands: Commands,
     mut rng: Local<Option<SmallRng>>,
 ) {

@@ -75,7 +75,7 @@ fn trigger_die_ability(
 }
 
 fn handle_death(
-    trigger: Trigger<ExecuteAbility<Stats>>,
+    trigger: On<ExecuteAbility<Stats>>,
     mut commands: Commands,
 ) {
     // Notice this only prints once even though the trigger system is in Update
