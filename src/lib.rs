@@ -35,6 +35,12 @@ impl<T: StatTrait> AbilitiesPlugin<T> {
     }
 }
 
+impl<T: StatTrait> Default for AbilitiesPlugin<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl<T: StatTrait> Plugin for AbilitiesPlugin<T> {
     fn build(&self, app: &mut App) {
         app.insert_resource(self.abilities.clone());
@@ -53,6 +59,12 @@ pub struct AbilityRegistry<T: StatTrait>(HashMap<TagId, AbilityDefinition<T>>);
 impl<T: StatTrait> AbilityRegistry<T> {
     pub fn new() -> Self {
         Self(HashMap::new())
+    }
+}
+
+impl<T: StatTrait> Default for AbilityRegistry<T> {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

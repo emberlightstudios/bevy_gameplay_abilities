@@ -1,11 +1,5 @@
-use bevy_hierarchical_tags::prelude::*;
 use bevy::prelude::*;
-
-
-
-
-#[derive(Component, Clone, Deref, DerefMut)]
-pub struct CurrentAbility(Option<TagId>);
+use bevy_hierarchical_tags::prelude::*;
 
 // Per ability tags
 #[derive(Clone)]
@@ -19,7 +13,7 @@ pub struct AbilityTags {
 
 impl AbilityTags {
     pub fn new(tag: TagId) -> Self {
-        Self{
+        Self {
             ability: tag,
             required: RequiredTags::default(),
             blocked_by: BlockingTags::default(),
