@@ -1,8 +1,7 @@
 use bevy::prelude::*;
-use bevy_hierarchical_tags::prelude::*;
 use bevy_abilities::prelude::*;
 use bevy_gameplay_effects::prelude::*;
-
+use bevy_hierarchical_tags::prelude::*;
 
 // GameplayStats is tightly integrated into GameplayAbilities.
 // Abilities can have costs that can be expressed in stats.
@@ -10,11 +9,10 @@ use bevy_gameplay_effects::prelude::*;
 // the enum you use to define your stats.
 
 // In this simple example we don't actually need any stats but
-// I still have to create a dummy enum to use the abilities plugin. 
+// I still have to create a dummy enum to use the abilities plugin.
 stats!(Stats {});
 
 type MyAbilityRegistry = AbilityRegistry<Stats>;
-
 
 fn main() {
     let mut app = App::new();
@@ -35,8 +33,7 @@ fn main() {
     let mut abilities: AbilitiesPlugin<Stats> = AbilitiesPlugin::<Stats>::new();
     abilities.register(death_ability);
 
-    app
-        .add_plugins((MinimalPlugins, abilities))
+    app.add_plugins((MinimalPlugins, abilities))
         .insert_resource(tag_container)
         .add_systems(Startup, setup)
         .add_systems(Update, trigger_die_ability)
@@ -49,11 +46,7 @@ struct MyAbilityTags {
     death: TagId,
 }
 
-fn setup(
-    mut commands: Commands,
-    my_tags: Res<MyAbilityTags>,
-    abilities: Res<MyAbilityRegistry>,
-) {
+fn setup(mut commands: Commands, my_tags: Res<MyAbilityTags>, abilities: Res<MyAbilityRegistry>) {
     let death_ability = my_tags.death;
     commands.spawn((
         ActiveTags::default(),
@@ -70,14 +63,15 @@ fn trigger_die_ability(
     if let Ok((entity, abilities)) = q.single() {
         let death_tag = my_tags.death;
         let death = abilities.get_from_tag(death_tag).unwrap();
-        commands.trigger(TryExecuteAbility { entity, ability: Ability::from(&death) });
+        commands.trigger(TryExecuteAbility {
+            entity,
+            ability: Ability::from(&death),
+            target: None,
+        });
     }
 }
 
-fn handle_death(
-    trigger: On<ExecuteAbility<Stats>>,
-    mut commands: Commands,
-) {
+fn handle_death(trigger: On<ExecuteAbility<Stats>>, mut commands: Commands) {
     // Notice this only prints once even though the trigger system is in Update
     // This is because the Character.State.Dying tag blocks the ability from applying again
     println!("\nSUCCESS: Character death ability activated");

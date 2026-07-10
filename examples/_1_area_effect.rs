@@ -1,11 +1,10 @@
 /// This example demonstrates a simple stun area effect.
 /// It also shows how you can use tags to implement mechaincs
 /// like blocking character movement or ability cooldowns.
-/// 
+///
 /// Use WASD to move and space bar to execute the ability.
 /// It costs 25 mana and you start with 100, so you can do it 4 times.
 /// There is also a 5 second cooldown.
- 
 use bevy::prelude::*;
 use bevy_abilities::prelude::*;
 use bevy_behave::prelude::*;
@@ -13,10 +12,9 @@ use bevy_gameplay_effects::prelude::*;
 use bevy_hierarchical_tags::prelude::*;
 
 mod shared;
-use shared::{SharedPlugin, MoveTarget, Player, Stats, Enemy};
+use shared::{Enemy, MoveTarget, Player, SharedPlugin, Stats};
 
 const MOVE_SPEED: f32 = 2.;
-
 
 #[derive(Component, Clone, Deref, DerefMut)]
 struct PreStunCue(Timer);
@@ -40,69 +38,77 @@ fn main() {
     let mut app = App::new();
 
     /*------------------------------------------+
-     | Set up the tags needed for this example  |
-     +------------------------------------------*/
+    | Set up the tags needed for this example  |
+    +------------------------------------------*/
     let mut tag_registry = TagRegistry::new();
     let character_movement_blocked = tag_registry.register("Character.Movement.Blocked");
-    let character_movement_blocked_stunned = tag_registry.register("Character.Movement.Blocked.Stunned");
-    let character_movement_blocked_casting = tag_registry.register("Character.Movement.Blocked.Casting");
+    let character_movement_blocked_stunned =
+        tag_registry.register("Character.Movement.Blocked.Stunned");
+    let character_movement_blocked_casting =
+        tag_registry.register("Character.Movement.Blocked.Casting");
     let ability_stun = tag_registry.register("Ability.Stun");
     let ability_stun_cooldown = tag_registry.register("Ability.Stun.Cooldown");
 
-    let tags = StunTags{
-        ability_stun, ability_stun_cooldown, character_movement_blocked_stunned,
-        character_movement_blocked, character_movement_blocked_casting
+    let tags = StunTags {
+        ability_stun,
+        ability_stun_cooldown,
+        character_movement_blocked_stunned,
+        character_movement_blocked,
+        character_movement_blocked_casting,
     };
     app.insert_resource(tag_registry);
     app.insert_resource(tags);
 
     /*--------------------+
-     | Build stun ability |
-     +--------------------*/
-    let stun_tree = behave!{
+    | Build stun ability |
+    +--------------------*/
+    let stun_tree = behave! {
         Behave::Sequence => {
             // Do a little animation cue
             Behave::spawn(PreStunCue(Timer::from_seconds(1., TimerMode::Once))),
             // Trigger the effect on enemies
-            Behave::trigger(StunTrigger)
+            Behave::trigger(StunTrigger),
+            Behave::trigger(Cleanup)
         }
     };
     let stun_abililty = AbilityDefinition::<Stats>::new(ability_stun)
         .adds_tags([character_movement_blocked_casting])
         .blocked_by([ability_stun_cooldown, character_movement_blocked_casting])
         .with_execution_tree(stun_tree)
-        .with_stat_cost(StatCost::<Stats>{ stat: Stats::Mana, amount: 25. });
+        .with_stat_cost(StatCost::<Stats> {
+            stat: Stats::Mana,
+            amount: 25.,
+        });
 
-        
     /*-----------------------+
-     | Register stun ability |
-     +-----------------------*/
+    | Register stun ability |
+    +-----------------------*/
     let mut abilities = AbilitiesPlugin::<Stats>::new();
     abilities.register(stun_abililty);
 
     /*-------------+
-     | Run the app |
-     +-------------*/
-    app
-        .add_plugins((
-            abilities,
-            GameplayEffectsPlugin::<Stats>::default(),
-            BehavePlugin::default(),
-            DefaultPlugins,
-            SharedPlugin,
-        ))
-        .add_systems(Startup, (
-            setup_player,
-        ))
-        .add_systems(Update, (
+    | Run the app |
+    +-------------*/
+    app.add_plugins((
+        abilities,
+        GameplayEffectsPlugin::<Stats>::default(),
+        BehavePlugin::default(),
+        DefaultPlugins,
+        SharedPlugin,
+    ))
+    .add_systems(Startup, setup_player)
+    .add_systems(
+        Update,
+        (
             move_enemies_towards_targets,
             player_movement,
             execute_stun_ability,
             pre_stun_cue,
             enemy_stun_shake,
-        ))
-        .add_observer(trigger_stun)
-        .run();
+        ),
+    )
+    .add_observer(trigger_stun)
+    .run();
 }
 
 fn setup_player(
@@ -116,31 +122,30 @@ fn setup_player(
     commands.spawn((
         Mesh3d(capsule.clone()),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::LinearRgba(LinearRgba { red: 1., green: 0.3, blue: 0.6, alpha: 1. }),
+            base_color: Color::LinearRgba(LinearRgba {
+                red: 1.,
+                green: 0.3,
+                blue: 0.6,
+                alpha: 1.,
+            }),
             ..default()
         })),
         Transform::default(),
         Player,
         ActiveTags::new(),
         ActiveEffects::<Stats>::new(None),
-        GrantedAbilities::<Stats>::from_tags(
-            [tags.ability_stun], &abilities
-        ),
+        GrantedAbilities::<Stats>::from_tags([tags.ability_stun], &abilities),
         CurrentAbility::<Stats>::default(),
-        GameplayStats::<Stats>::new(
-            |s| {
-                match s {
-                    Stats::Mana => 100.,
-                    Stats::None => unreachable!()
-                }
-            },
-        ),
+        GameplayStats::<Stats>::new(|s| match s {
+            Stats::Mana => 100.,
+            Stats::None => unreachable!(),
+        }),
     ));
 }
 
 /*----------------+
- | Movement Input |
- +----------------*/
+| Movement Input |
++----------------*/
 fn player_movement(
     mut q: Query<(&mut Transform, &ActiveTags), With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
@@ -173,8 +178,8 @@ fn player_movement(
 }
 
 /*---------------+
- | Ability Input |
- +---------------*/
+| Ability Input |
++---------------*/
 fn execute_stun_ability(
     player: Query<(Entity, &GrantedAbilities<Stats>), With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
@@ -185,13 +190,17 @@ fn execute_stun_ability(
         let (entity, abilities) = player.single().unwrap();
         let stun_ability_def = abilities.get_from_tag(tags.ability_stun).unwrap();
         let ability = Ability::from(&stun_ability_def);
-        commands.trigger(TryExecuteAbility { entity, ability });
+        commands.trigger(TryExecuteAbility {
+            entity,
+            ability,
+            target: None,
+        });
     }
 }
 
 /*----------------+
- | Enemy Movement |
- +----------------*/
+| Enemy Movement |
++----------------*/
 fn move_enemies_towards_targets(
     mut q: Query<(&ActiveTags, &MoveTarget, &mut Transform)>,
     tags: Res<StunTags>,
@@ -201,7 +210,7 @@ fn move_enemies_towards_targets(
     for (active_tags, target, mut transform) in q.iter_mut() {
         // Don't move if blocked
         if active_tags.any_match(tags.character_movement_blocked, &tag_registry) {
-            continue
+            continue;
         }
 
         let Some(target) = **target else { continue };
@@ -211,8 +220,8 @@ fn move_enemies_towards_targets(
 }
 
 /*--------------------------------+
- | Ability Step 1 (animation cue) |
- +--------------------------------*/
+| Ability Step 1 (animation cue) |
++--------------------------------*/
 fn pre_stun_cue(
     mut cue: Query<(&mut PreStunCue, &BehaveCtx)>,
     mut player: Query<&mut Transform, With<Player>>,
@@ -234,32 +243,25 @@ fn pre_stun_cue(
 }
 
 /*---------------------------------------+
- | Trigger the stun effect within radius |
- +---------------------------------------*/
+| Trigger the stun effect within radius |
++---------------------------------------*/
 fn trigger_stun(
     trigger: On<BehaveTrigger<StunTrigger>>,
-    mut player: Query<(Entity, &mut ActiveTags, &Transform, &CurrentAbility<Stats>), With<Player>>,
+    mut player: Query<(Entity, &mut ActiveTags, &Transform), With<Player>>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
     tags: Res<StunTags>,
     mut commands: Commands,
 ) {
     // Handle effects when abiity actually executes
-    
+
     // Unblock player movement
-    let (
-        player,
-        mut player_tags,
-        player_transform,
-        current
-    ) = player.single_mut().unwrap();
+    let (player, mut player_tags, player_transform) = player.single_mut().unwrap();
     player_tags.remove(tags.character_movement_blocked_casting);
 
     // Stun enemies in range
     let range = 4.;
-    let stun_effect: GameplayEffect<Stats> = GameplayEffect::tag_effect(
-        tags.character_movement_blocked_stunned,
-        Some(5.0)
-    );
+    let stun_effect: GameplayEffect<Stats> =
+        GameplayEffect::tag_effect(tags.character_movement_blocked_stunned, Some(5.0));
     for (enemy, enemy_transform) in enemies.iter() {
         let d = (enemy_transform.translation - player_transform.translation).length();
         if d <= range {
@@ -272,47 +274,37 @@ fn trigger_stun(
     }
 
     // Add cooldown tag to prevent re-casting for 5 seconds
-    commands.trigger(
-        AddEffect(AddEffectData::<Stats>::new(
-            player,
-            GameplayEffect::tag_effect(
-                tags.ability_stun_cooldown,
-                Some(5.0),
-            ),
-            None,
-        ))
-    );
+    commands.trigger(AddEffect(AddEffectData::<Stats>::new(
+        player,
+        GameplayEffect::tag_effect(tags.ability_stun_cooldown, Some(5.0)),
+        None,
+    )));
 
     // Pay mana cost
     // We defined this when we register.  All that really
     // does is ensure we have enough to pay the cost before
     // we can execute it.  When it is time to pay we still
     // have to do that manually.
-    commands.trigger(
-        AddEffect(AddEffectData::<Stats>::new(
-            player,
-            GameplayEffect::new(
-                None,
-                Stats::Mana,
-                EffectMagnitude::Fixed(-25.),
-                EffectCalculation::Additive,
-                EffectDuration::Immediate,
-            ),
+    commands.trigger(AddEffect(AddEffectData::<Stats>::new(
+        player,
+        GameplayEffect::new(
             None,
-        ))
-    );
+            Stats::Mana,
+            EffectMagnitude::Fixed(-25.),
+            EffectCalculation::Additive,
+            EffectDuration::Immediate,
+        ),
+        None,
+    )));
 
     // Finalize
     let ctx = trigger.event().ctx();
     commands.trigger(ctx.success());
-
-    let ability = current.as_ref().unwrap().clone();
-    commands.trigger(EndAbility{ entity: player, ability });
 }
 
 /*------------------------+
- | Enemy effect animation |
- +------------------------*/
+| Enemy effect animation |
++------------------------*/
 fn enemy_stun_shake(
     mut added: MessageReader<OnEffectAdded>,
     mut removed: MessageReader<OnEffectRemoved>,
@@ -325,7 +317,9 @@ fn enemy_stun_shake(
 
     // Add new shake components
     for ev in added.read() {
-        let EffectMetadata {target_entity, tag, .. } = ev.0;
+        let EffectMetadata {
+            target_entity, tag, ..
+        } = ev.0;
         if Some(tags.character_movement_blocked_stunned) == tag {
             commands.entity(target_entity).insert(EnemyStunShake);
         }
@@ -339,12 +333,13 @@ fn enemy_stun_shake(
 
     // Remove expired shake components
     for ev in removed.read() {
-        let EffectMetadata {target_entity, tag, .. } = ev.0;
+        let EffectMetadata {
+            target_entity, tag, ..
+        } = ev.0;
         if Some(tags.character_movement_blocked_stunned) == tag {
             commands.entity(target_entity).remove::<EnemyStunShake>();
             let mut transform = shakers.get_mut(target_entity).unwrap();
             transform.rotation = Quat::IDENTITY;
         }
     }
-
 }

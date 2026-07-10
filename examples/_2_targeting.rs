@@ -4,7 +4,6 @@ use std::time::Duration;
 /// Use WASD to move and space bar to execute the ability.
 /// Use the same keys for targeting.
 /// You will have 10 grenades
- 
 use bevy::prelude::*;
 use bevy_abilities::prelude::*;
 use bevy_behave::prelude::*;
@@ -12,10 +11,9 @@ use bevy_gameplay_effects::prelude::*;
 use bevy_hierarchical_tags::prelude::*;
 
 mod shared;
-use shared::{SharedPlugin, MoveTarget, Player, Stats, Enemy};
+use shared::{Enemy, MoveTarget, Player, SharedPlugin, Stats};
 
 const MOVE_SPEED: f32 = 2.;
-
 
 #[derive(Component, Clone)]
 struct WaitForTargetConfirmation;
@@ -36,69 +34,78 @@ struct Explode;
 struct Tags {
     grenade_ability: TagId,
     throwing: TagId,
+    grenade_item: TagId,
 }
 
 fn main() {
     let mut app = App::new();
     /*------+
-     | Tags |
-     +------*/
-    // We won't use many tags in this example, but the ability needs one
+    | Tags |
+    +------*/
     let mut tag_registry = TagRegistry::new();
     let grenade_ability = tag_registry.register("Ability.Grenade");
     let throwing = tag_registry.register("Ability.Grenade.Throwing");
-    let tags = Tags { grenade_ability, throwing };
-    app.insert_resource(tags);
+    let grenade_item = tag_registry.register("Item.Grenade");
+    let tags = Tags {
+        grenade_ability,
+        throwing,
+        grenade_item,
+    };
     app.insert_resource(tag_registry);
 
     /*---------------+
-     | Build ability |
-     +---------------*/
-     app.add_plugins(DefaultPlugins);
+    | Build ability |
+    +---------------*/
+    app.add_plugins(DefaultPlugins);
 
-    let grenade_tree = behave!{
+    let grenade_tree = behave! {
         Behave::Sequence => {
             Behave::spawn(WaitForTargetConfirmation),
+            Behave::trigger(PayCosts),
             Behave::spawn(WaitForImpact),
             // Trigger the effect on enemies
-            Behave::trigger(Explode)
+            Behave::trigger(Explode),
+            Behave::trigger(Cleanup)
         }
     };
     let grenade_ability = AbilityDefinition::<Stats>::new(grenade_ability)
         .adds_tags([throwing])
         .blocked_by([throwing])
         .with_execution_tree(grenade_tree)
-        .with_item_cost(ItemCost { item_id: 1, amount: 1 });
+        .with_item_cost(ItemCost {
+            item_id: tags.grenade_item,
+            amount: 1,
+        });
 
-        
     /*--------------------------+
-     | Register grenade ability |
-     +--------------------------*/
+    | Register grenade ability |
+    +--------------------------*/
+    app.insert_resource(tags);
     let mut abilities = AbilitiesPlugin::<Stats>::new();
     abilities.register(grenade_ability);
 
     /*-------------+
-     | Run the app |
-     +-------------*/
-    app
-        .add_plugins((
-            abilities,
-            GameplayEffectsPlugin::<Stats>::default(),
-            BehavePlugin::default(),
-            SharedPlugin,
-        ))
-        .add_systems(Startup, (
-            setup_player,
-        ))
-        .add_systems(Update, (
+    | Run the app |
+    +-------------*/
+    app.add_plugins((
+        abilities,
+        GameplayEffectsPlugin::<Stats>::default(),
+        BehavePlugin::default(),
+        SharedPlugin,
+    ))
+    .add_systems(Startup, (setup_player,))
+    .add_systems(
+        Update,
+        (
             move_enemies_towards_targets,
             player_movement,
             execute_grenade_ability,
             targeting_reticle,
             grenade_in_flight,
-        ))
-        .add_observer(explode)
-        .run();
+        ),
+    )
+    .add_observer(explode)
+    .run();
 }
 
 fn setup_player(
@@ -109,13 +116,17 @@ fn setup_player(
     tags: Res<Tags>,
 ) {
     let mut inventory = AbilityItems::new();
-    // Use u16 keys to identify items
-    inventory.insert(1, 10);
+    inventory.insert(tags.grenade_item, 10);
 
     commands.spawn((
         Mesh3d(meshes.add(Capsule3d::default().mesh())),
         MeshMaterial3d(materials.add(StandardMaterial {
-            base_color: Color::LinearRgba(LinearRgba { red: 1., green: 0.3, blue: 0.6, alpha: 1. }),
+            base_color: Color::LinearRgba(LinearRgba {
+                red: 1.,
+                green: 0.3,
+                blue: 0.6,
+                alpha: 1.,
+            }),
             ..default()
         })),
         Transform::default(),
@@ -123,17 +134,15 @@ fn setup_player(
         Player,
         ActiveTags::new(),
         ActiveEffects::<Stats>::new(None),
-        GrantedAbilities::<Stats>::from_tags(
-            [tags.grenade_ability], &abilities
-        ),
+        GrantedAbilities::<Stats>::from_tags([tags.grenade_ability], &abilities),
         CurrentAbility::<Stats>::default(),
         inventory,
     ));
 }
 
 /*----------------+
- | Movement Input |
- +----------------*/
+| Movement Input |
++----------------*/
 fn player_movement(
     mut q: Query<(&mut Transform, &ActiveTags), With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
@@ -166,8 +175,8 @@ fn player_movement(
 }
 
 /*---------------+
- | Ability Input |
- +---------------*/
+| Ability Input |
++---------------*/
 fn execute_grenade_ability(
     player: Query<(Entity, &GrantedAbilities<Stats>), With<Player>>,
     input: Res<ButtonInput<KeyCode>>,
@@ -178,17 +187,18 @@ fn execute_grenade_ability(
         let (entity, abilities) = player.single().unwrap();
         let grenade_def = abilities.get_from_tag(tags.grenade_ability).unwrap();
         let ability = Ability::from(&grenade_def);
-        commands.trigger(TryExecuteAbility { entity, ability });
+        commands.trigger(TryExecuteAbility {
+            entity,
+            ability,
+            target: None,
+        });
     }
 }
 
 /*----------------+
- | Enemy Movement |
- +----------------*/
-fn move_enemies_towards_targets(
-    mut q: Query<(&MoveTarget, &mut Transform)>,
-    time: Res<Time>,
-) {
+| Enemy Movement |
++----------------*/
+fn move_enemies_towards_targets(mut q: Query<(&MoveTarget, &mut Transform)>, time: Res<Time>) {
     for (target, mut transform) in q.iter_mut() {
         let Some(target) = **target else { continue };
         let d = target - transform.translation;
@@ -197,8 +207,8 @@ fn move_enemies_towards_targets(
 }
 
 /*---------------------------+
- | Ability Step 1 (targetng) |
- +---------------------------*/
+| Ability Step 1 (targetng) |
++---------------------------*/
 fn targeting_reticle(
     mut targeter: Query<&BehaveCtx, With<WaitForTargetConfirmation>>,
     mut reticle: Query<(Entity, &mut Transform), With<TargetingReticle>>,
@@ -239,10 +249,7 @@ fn targeting_reticle(
 
             let mut isometry = Isometry3d::from_translation(transform.translation);
             isometry.rotation = Quat::from_rotation_x(90_f32.to_radians());
-            gizmos.circle(
-                isometry,
-                4., Color::linear_rgb(1., 0., 1.)
-            );
+            gizmos.circle(isometry, 4., Color::linear_rgb(1., 0., 1.));
         }
 
         // Did we trigger the throw?
@@ -254,14 +261,20 @@ fn targeting_reticle(
             if let Ok((reticle, reticle_transform)) = reticle.single() {
                 let grenade_mesh = Mesh3d(meshes.add(Sphere::new(0.2).mesh()));
                 let grenade_material = MeshMaterial3d(materials.add(StandardMaterial {
-                    base_color: Color::LinearRgba(LinearRgba { red: 1., green: 0.3, blue: 0.9, alpha: 1. }),
+                    base_color: Color::LinearRgba(LinearRgba {
+                        red: 1.,
+                        green: 0.3,
+                        blue: 0.9,
+                        alpha: 1.,
+                    }),
                     ..default()
                 }));
                 let player = player.single().unwrap();
                 commands.spawn((
                     GrenadeTarget(reticle_transform.translation),
                     Transform::from_translation(player.translation),
-                    grenade_mesh, grenade_material,
+                    grenade_mesh,
+                    grenade_material,
                 ));
 
                 // Despawn reticle
@@ -279,11 +292,11 @@ fn parabola(start: Vec3, end: Vec3, max_height: f32, t: f32) -> Vec3 {
     (1.0 - t) * (1.0 - t) * start + 2.0 * (1.0 - t) * t * control + t * t * end
 }
 /*---------------------------------+
- | Ability Step 2 (launch grenade) |
- +---------------------------------*/
+| Ability Step 2 (launch grenade) |
++---------------------------------*/
 fn grenade_in_flight(
     mut ctx: Query<&BehaveCtx, With<WaitForImpact>>,
-    mut player: Query<(&Transform, &mut AbilityItems), With<Player>>,
+    player: Query<&Transform, With<Player>>,
     mut grenade: Query<(&mut Transform, &GrenadeTarget), Without<Player>>,
     mut commands: Commands,
     time: Res<Time>,
@@ -291,15 +304,9 @@ fn grenade_in_flight(
     mut timer: Local<Timer>,
 ) {
     if let Ok(ctx) = ctx.single_mut() {
-        let (player, mut items) = player.single_mut ().unwrap();
+        let player = player.single().unwrap();
         if !*initialized {
             *initialized = true;
-
-            // pay cost
-            let grenades = items.get_mut(&1).unwrap();
-            // This should never go below 0 because of the cost checking in the BevyAbilities systems
-            // But just in case we can use saturating sub 
-            *grenades = grenades.saturating_sub(1);
 
             timer.set_duration(Duration::from_secs(2));
         }
@@ -318,13 +325,12 @@ fn grenade_in_flight(
 }
 
 /*-------------------------------+
- | Ability step 3 (kill enemies) |
- +-------------------------------*/
+| Ability step 3 (kill enemies) |
++-------------------------------*/
 fn explode(
     trigger: On<BehaveTrigger<Explode>>,
     grenade: Query<(Entity, &GrenadeTarget)>,
     enemies: Query<(Entity, &Transform), With<Enemy>>,
-    player: Query<(Entity, &CurrentAbility<Stats>), With<Player>>,
     mut commands: Commands,
 ) {
     let ctx = trigger.event().ctx();
@@ -342,6 +348,4 @@ fn explode(
 
     // Add cooldown tag to prevent re-casting for 5 seconds
     commands.trigger(ctx.success());
-    let (player, current) = player.single().unwrap();
-    commands.trigger(EndAbility{ entity: player, ability: current.as_ref().unwrap().clone() });
 }
