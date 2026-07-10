@@ -1,9 +1,11 @@
-use bevy_hierarchical_tags::TagId;
-use bevy_gameplay_effects::prelude::StatTrait;
-use smallvec::SmallVec;
-use crate::{costs::{AbilityCost, ItemCost, StatCost}, tags::AbilityTags};
+use crate::{
+    costs::{AbilityCost, ItemCost, StatCost},
+    tags::AbilityTags,
+};
 use bevy_behave::prelude::*;
-
+use bevy_gameplay_effects::prelude::StatTrait;
+use bevy_hierarchical_tags::TagId;
+use smallvec::SmallVec;
 
 #[derive(Clone)]
 pub struct AbilityDefinition<T: StatTrait> {
@@ -18,7 +20,7 @@ impl<T: StatTrait> AbilityDefinition<T> {
             tags: AbilityTags::new(tag),
             costs: AbilityCost::<T> {
                 stat_costs: SmallVec::new(),
-                item_costs: SmallVec::new()
+                item_costs: SmallVec::new(),
             },
             execution_tree: None,
         }
@@ -39,31 +41,26 @@ impl<T: StatTrait> AbilityDefinition<T> {
         self
     }
 
-    /*
-    pub fn level(mut self, level: u8) -> Self {
-        self.level = level;
-        self
-    }
-     */
-    
     pub fn required(mut self, tags: impl IntoIterator<Item = TagId>) -> Self {
-        tags.into_iter().for_each(|tag| self.tags.required.push(tag));
+        tags.into_iter()
+            .for_each(|tag| self.tags.required.push(tag));
         self
     }
 
-    pub fn blocked_by(mut self, tags: impl IntoIterator<Item = TagId>) -> Self{
-        tags.into_iter().for_each(|tag| self.tags.blocked_by.push(tag));
+    pub fn blocked_by(mut self, tags: impl IntoIterator<Item = TagId>) -> Self {
+        tags.into_iter()
+            .for_each(|tag| self.tags.blocked_by.push(tag));
         self
     }
 
     pub fn canceled_by(mut self, tags: impl IntoIterator<Item = TagId>) -> Self {
-        tags.into_iter().for_each(|tag| self.tags.canceled_by.push(tag));
+        tags.into_iter()
+            .for_each(|tag| self.tags.canceled_by.push(tag));
         self
     }
-    
+
     pub fn adds_tags(mut self, tags: impl IntoIterator<Item = TagId>) -> Self {
         tags.into_iter().for_each(|tag| self.tags.add.push(tag));
         self
     }
-
 }

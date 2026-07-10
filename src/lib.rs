@@ -15,8 +15,8 @@ pub mod prelude {
         AbilitiesPlugin, AbilityRegistry,
         ability_definition::AbilityDefinition,
         ability::{Ability, GrantedAbilities, CurrentAbility},
-        tags::{AbilityTags},
-        costs::{ItemCost, StatCost, AbilityItems},
+        costs::{ItemCost, StatCost, AbilityItems, PayCosts, CostsPaid},
+        tags::{AbilityTags, RequiredTags, BlockingTags, CancelTags, AbilityAddTags},
         events::*,
     };
 }
@@ -47,6 +47,8 @@ impl<T: StatTrait> Plugin for AbilitiesPlugin<T> {
         app.add_observer(ability::check_ability_constraints::<T>);
         app.add_observer(ability::execute_ability::<T>);
         app.add_observer(ability::end_ability::<T>);
+        app.add_observer(costs::pay_item_costs::<T>);
+        app.add_observer(events::cleanup_ability::<T>);
         app.add_systems(Update, (
             ability::check_ability_canceled::<T>,
         ));

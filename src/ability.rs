@@ -14,7 +14,6 @@ pub struct Ability<T: StatTrait> {
     pub execution_tree: Option<Tree<Behave>>,
     pub costs: AbilityCost<T>,
     tree_entity: Option<Entity>,
-    //pub level: u8,
 }
 
 impl<T: StatTrait> From<&AbilityDefinition<T>> for Ability<T> {
@@ -34,7 +33,7 @@ impl<T: StatTrait> From<&AbilityDefinition<T>> for Ability<T> {
 }
 
 #[derive(Component, Deref, DerefMut)]
-pub struct CurrentAbility<T: StatTrait>(Option<Ability<T>>);
+pub struct CurrentAbility<T: StatTrait>(pub(crate) Option<Ability<T>>);
 
 impl<T: StatTrait> Default for CurrentAbility<T> {
     fn default() -> Self {
@@ -87,9 +86,7 @@ pub(crate) fn ability_tags_ok(
     tag_registry: &TagRegistry,
     active_tags: &ActiveTags,
 ) -> bool {
-    // Must have tags
     active_tags.all_match_from(&tags.required, tag_registry) &&
-    // Must NOT have tags
     active_tags.none_match_from(&tags.blocked_by, tag_registry) &&
     active_tags.none_match_from(&tags.canceled_by, tag_registry)
 }
@@ -102,7 +99,7 @@ pub(crate) fn check_ability_constraints<T: StatTrait>(
     items: Query<&AbilityItems>,
     mut commands: Commands,
 ) {
-    let TryExecuteAbility { entity, ability } = trigger.event();
+    let TryExecuteAbility { entity, ability, .. } = trigger.event();
     let tags = &ability.tags;
     let costs = &ability.costs;
     let Ok((active_tags, granted)) = active_tags.get(*entity) else {
@@ -137,7 +134,7 @@ pub(crate) fn check_ability_constraints<T: StatTrait>(
             let Some(&inventory) = items.get(&cost.item_id) else {
                 return;
             };
-            if inventory < cost.amount as u16 {
+            if inventory < cost.amount {
                 can_pay = false;
             }
         }
@@ -146,7 +143,10 @@ pub(crate) fn check_ability_constraints<T: StatTrait>(
     if can_pay {
         let mut ability = ability.clone();
         if let Some(tree) = &ability.execution_tree {
-            let tree = commands.spawn(BehaveTree::new(tree.clone())).id();
+            let tree = commands.spawn((
+                BehaveTree::new(tree.clone()),
+                BehaveTargetEntity::Parent,
+            )).id();
             commands.entity(*entity).add_child(tree);
             ability.tree_entity = Some(tree);
         }
